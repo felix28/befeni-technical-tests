@@ -1,0 +1,80 @@
+version: '3.7'
+services:
+
+  #PHP Service
+  shirt-order-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    container_name: shirt-order-app
+    #restart: unless-stopped
+    tty: true
+    ports:
+      - 7010:80
+    environment:
+      SERVICE_NAME: shirt-order-app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - shirt-order-app-network
+
+  #Nginx Service
+  shirt-order-nginx:
+    image: nginx:alpine
+    container_name: shirt-order-nginx
+    #restart: unless-stopped
+    tty: true
+    ports:
+      - 7011:80
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - shirt-order-app-network
+
+  #MySQL Service
+  shirt-order-mysql:
+    image: mysql:5.7.22
+    container_name: shirt-order-mysql
+    #restart: unless-stopped
+    tty: true
+    ports:
+      - 7012:3306
+    environment:
+      MYSQL_DATABASE: befeni
+      MYSQL_ROOT_PASSWORD: rootpassword
+      SERVICE_TAGS: dev
+      SERVICE_NAME: shirt-order-mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - shirt-order-app-network
+
+  shirt-order-phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: shirt-order-phpmyadmin
+    #restart: unless-stopped
+    links: 
+      - shirt-order-mysql:db
+    ports:
+      - 7013:80
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: rootpassword
+    networks:
+      - shirt-order-app-network
+
+#Docker Networks
+networks:
+  shirt-order-app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local

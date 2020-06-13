@@ -1,0 +1,46 @@
+version: '3.7'
+services:
+
+  #PHP Service
+  calculator-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    container_name: calculator-app
+    #restart: unless-stopped
+    tty: true
+    ports:
+      - 7008:80
+    environment:
+      SERVICE_NAME: calculator-app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - calculator-app-network
+
+  #Nginx Service
+  calculator-nginx:
+    image: nginx:alpine
+    container_name: calculator-nginx
+    #restart: unless-stopped
+    tty: true
+    ports:
+      - 7009:80
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - calculator-app-network
+
+#Docker Networks
+networks:
+  calculator-app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
